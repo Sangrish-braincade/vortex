@@ -1,6 +1,8 @@
 # VORTEX
 
-**AI-powered video montage engine** — feed it gameplay footage, and it produces a polished cinematic edit with kill detection, beat-sync, and composable visual effects.
+**VORTEX is an automated video editor designed to be used by AI agents (Claude Code).** Instead of dragging clips on a timeline, an AI writes edit scripts that the engine executes. It handles rotoscoping, color grading, VFX, beat-synced editing, and ML-powered highlight detection — all driven programmatically.
+
+Feed it gameplay footage and it produces a polished cinematic edit with kill detection, beat-sync, and composable visual effects. No timeline UI. No manual editing. The agent is the editor.
 
 ---
 

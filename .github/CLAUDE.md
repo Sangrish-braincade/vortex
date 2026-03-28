@@ -6,6 +6,19 @@ how to do it, and what the standards are.
 
 ---
 
+## Project Goal
+
+VORTEX is an automated video editor that **YOU** (Claude Code) use as a tool to edit videos. When a user asks you to edit a video, you:
+
+1. Load clips via the MCP tools or CLI
+2. Analyze them (detect kills, beats, scene changes)
+3. Write a JS/TS composition script that arranges clips, applies effects (rotoscoping, color grading, VFX, velocity ramps, etc.)
+4. Render the final output
+
+**You are both the developer building this tool AND the primary user of it.** Build it so you can use it effectively. Every API decision, every tool schema, every error message should be optimized for an AI agent calling it programmatically — not for a human using a GUI.
+
+---
+
 ## What this project is
 
 **VORTEX** is an AI-powered video montage engine written in Rust.
