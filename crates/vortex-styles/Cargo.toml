@@ -1,0 +1,15 @@
+[package]
+name = "vortex-styles"
+description = "Style template system — parse and apply .toml montage styles"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+vortex-core = { path = "../vortex-core" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+toml = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }

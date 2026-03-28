@@ -1,0 +1,15 @@
+[package]
+name = "vortex-analysis"
+description = "Kill detection, beat detection, and scene detection"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+vortex-core = { path = "../vortex-core" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }

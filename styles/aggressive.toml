@@ -1,0 +1,43 @@
+name = "aggressive"
+description = "Hard-hitting montage: rapid cuts, extreme slow-mo, heavy shake and flash"
+tags = ["fps", "fps-gameplay", "action", "kills", "hype"]
+
+[cuts]
+cuts_per_minute = 45.0
+beat_snap_tolerance_secs = 0.05
+min_clip_secs = 0.4
+max_clip_secs = 3.5
+cut_trigger = "hybrid"
+
+[velocity]
+enabled = true
+min_speed = 0.15
+ramp_in_secs = 0.25
+ramp_out_secs = 0.45
+probability = 0.85
+
+[effects]
+zoom_on_kill = true
+zoom_scale = 1.2
+shake_on_impact = true
+shake_intensity = 14.0
+flash_on_beat = true
+flash_opacity = 0.85
+chromatic_aberration = true
+chromatic_strength = 0.75
+letterbox = true
+letterbox_ratio = 2.39
+
+[color]
+lut = "luts/cineon.cube"
+lut_strength = 0.6
+saturation = 1.35
+contrast = 1.2
+brightness = -0.05
+
+[audio]
+music_volume = 0.85
+gameplay_volume = 0.25
+fade_in_secs = 0.5
+fade_out_secs = 1.5
+sidechain_db = -12.0

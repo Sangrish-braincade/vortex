@@ -1,0 +1,43 @@
+name = "chill"
+description = "Relaxed pacing: longer clips, subtle color grade, soft transitions"
+tags = ["chill", "lofi", "highlights", "casual"]
+
+[cuts]
+cuts_per_minute = 18.0
+beat_snap_tolerance_secs = 0.12
+min_clip_secs = 2.0
+max_clip_secs = 8.0
+cut_trigger = "beat"
+
+[velocity]
+enabled = false
+min_speed = 0.5
+ramp_in_secs = 0.8
+ramp_out_secs = 1.2
+probability = 0.25
+
+[effects]
+zoom_on_kill = false
+zoom_scale = 1.05
+shake_on_impact = false
+shake_intensity = 3.0
+flash_on_beat = false
+flash_opacity = 0.3
+chromatic_aberration = false
+chromatic_strength = 0.1
+letterbox = false
+letterbox_ratio = 2.35
+
+[color]
+lut = "luts/matte.cube"
+lut_strength = 0.45
+saturation = 0.9
+contrast = 0.95
+brightness = 0.02
+
+[audio]
+music_volume = 0.75
+gameplay_volume = 0.15
+fade_in_secs = 1.5
+fade_out_secs = 3.0
+sidechain_db = -6.0

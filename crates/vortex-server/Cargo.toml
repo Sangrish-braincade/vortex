@@ -1,0 +1,25 @@
+[package]
+name = "vortex-server"
+description = "MCP server + CLI entrypoint for VORTEX"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "vortex"
+path = "src/main.rs"
+
+[dependencies]
+vortex-core = { path = "../vortex-core" }
+vortex-analysis = { path = "../vortex-analysis" }
+vortex-effects = { path = "../vortex-effects" }
+vortex-render = { path = "../vortex-render" }
+vortex-styles = { path = "../vortex-styles" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+clap = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }

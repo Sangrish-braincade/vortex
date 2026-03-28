@@ -1,0 +1,43 @@
+name = "cinematic"
+description = "Film-quality look: 2.39 anamorphic, LUT grade, controlled pacing"
+tags = ["cinematic", "film", "anamorphic", "color-grade", "premium"]
+
+[cuts]
+cuts_per_minute = 28.0
+beat_snap_tolerance_secs = 0.08
+min_clip_secs = 1.5
+max_clip_secs = 6.0
+cut_trigger = "scene"
+
+[velocity]
+enabled = true
+min_speed = 0.25
+ramp_in_secs = 0.5
+ramp_out_secs = 0.8
+probability = 0.55
+
+[effects]
+zoom_on_kill = true
+zoom_scale = 1.08
+shake_on_impact = false
+shake_intensity = 4.0
+flash_on_beat = false
+flash_opacity = 0.4
+chromatic_aberration = true
+chromatic_strength = 0.25
+letterbox = true
+letterbox_ratio = 2.39
+
+[color]
+lut = "luts/film-print.cube"
+lut_strength = 0.8
+saturation = 1.1
+contrast = 1.15
+brightness = -0.02
+
+[audio]
+music_volume = 0.9
+gameplay_volume = 0.1
+fade_in_secs = 2.0
+fade_out_secs = 3.5
+sidechain_db = -18.0

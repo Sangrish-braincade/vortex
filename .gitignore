@@ -1,0 +1,11 @@
+/target/
+**/*.rs.bk
+Cargo.lock
+*.mp4
+*.mp3
+*.wav
+*.cube
+*.3dl
+output/
+*.onnx
+*.pt
