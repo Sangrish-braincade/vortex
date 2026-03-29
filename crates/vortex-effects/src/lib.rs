@@ -95,7 +95,7 @@ pub fn effect_to_filter(effect: &Effect, ctx: &EffectContext) -> Result<FilterFr
             let filter = format!(
                 "crop={}:{}:0:{},pad={}:{}:0:{}:{}",
                 ctx.width, ctx.height - 2 * bar_height, bar_height,
-                ctx.width, ctx.height, 0, bar_height, e.bar_color.replace('#', "0x")
+                ctx.width, ctx.height, bar_height, e.bar_color.replace('#', "0x")
             );
             Ok(FilterFragment::new(filter, "letterbox"))
         }

@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "vortex": {
+      "command": "C:\\Users\\sang\\.cargo\\bin\\vortex.exe",
+      "args": ["serve"],
+      "env": {
+        "PATH": "C:\\Users\\sang\\.cargo\\bin;C:\\Users\\sang\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\\ffmpeg-8.1-full_build\\bin;C:\\Windows\\System32"
+      }
+    }
+  }
+}

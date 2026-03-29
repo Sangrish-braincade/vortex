@@ -116,17 +116,6 @@ pub struct Crop {
     pub height: u32,
 }
 
-/// A beat marker — a timestamp identified by beat/rhythm analysis.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BeatMarker {
-    /// Time in seconds from the audio track start.
-    pub time: f64,
-    /// Beat strength (0.0–1.0). Higher = harder hit.
-    pub strength: f64,
-    /// Beat category: "kick", "snare", "hihat", etc.
-    pub beat_type: String,
-}
-
 /// A detected kill/highlight moment from gameplay analysis.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KillMoment {

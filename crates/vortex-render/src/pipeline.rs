@@ -30,7 +30,7 @@
 use std::path::Path;
 use thiserror::Error;
 use tokio::sync::mpsc;
-use vortex_core::{Clip, OutputSettings, Project};
+use vortex_core::{OutputSettings, Project};
 use vortex_effects::{compose_effects, EffectContext};
 
 #[derive(Debug, Error)]
@@ -460,7 +460,7 @@ impl Default for RenderPipeline {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use vortex_core::{Clip, OutputSettings, Project, TimeRange};
+    use vortex_core::{Clip, Project, TimeRange};
 
     fn make_project() -> Project {
         let mut p = Project::new("test");
@@ -500,7 +500,9 @@ mod tests {
     async fn render_sends_started_then_terminal_event() {
         let pipeline = RenderPipeline::default();
         let project = make_project();
-        let mut rx = pipeline.render(&project, "output/test.mp4").await.unwrap();
+        // Use the OS temp dir so the output directory always exists
+        let output = std::env::temp_dir().join("vortex-test.mp4");
+        let mut rx = pipeline.render(&project, output.to_str().unwrap()).await.unwrap();
         // First event is always Started
         let first = rx.recv().await.unwrap();
         assert!(matches!(first, RenderProgress::Started { .. }));

@@ -12,7 +12,6 @@
 //! 5. Cluster nearby detections into [`KillMoment`] events.
 //! 6. Return sorted list of moments by confidence.
 
-use crate::AnalysisError;
 use vortex_core::{BoundingBox, Detection, KillMoment};
 
 /// Configuration for the kill detector.

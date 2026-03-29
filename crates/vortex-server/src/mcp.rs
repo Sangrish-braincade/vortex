@@ -441,10 +441,14 @@ impl McpServer {
             SceneDetector, SceneDetectorConfig,
         };
 
+        let kd = KillDetector::new(KillDetectorConfig::default());
+        let bd = BeatDetector::new(BeatDetectorConfig::default());
+        let sd = SceneDetector::new(SceneDetectorConfig::default());
+
         let (kills, beats, scenes, duration) = tokio::join!(
-            KillDetector::new(KillDetectorConfig::default()).detect(source_path),
-            BeatDetector::new(BeatDetectorConfig::default()).analyse(source_path),
-            SceneDetector::new(SceneDetectorConfig::default()).detect(source_path),
+            kd.detect(source_path),
+            bd.analyse(source_path),
+            sd.detect(source_path),
             vortex_analysis::probe_duration(source_path),
         );
 
