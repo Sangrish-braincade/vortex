@@ -32,6 +32,10 @@ pub enum Effect {
     Glitch(GlitchEffect),
     /// Rotoscoping — background removal or chroma key compositing.
     Rotoscope(RotoscopeEffect),
+    /// Text / title overlay.
+    Text(TextEffect),
+    /// Video stabilization (remove camera wobble).
+    Stabilize(StabilizeEffect),
 }
 
 impl Effect {
@@ -48,6 +52,8 @@ impl Effect {
             Effect::Vignette(_) => "vignette",
             Effect::Glitch(_) => "glitch",
             Effect::Rotoscope(_) => "rotoscope",
+            Effect::Text(_) => "text",
+            Effect::Stabilize(_) => "stabilize",
         }
     }
 }
@@ -361,6 +367,144 @@ impl Default for GlitchEffect {
     }
 }
 
+// ─── Text ─────────────────────────────────────────────────────────────────────
+
+/// Text / title overlay rendered via FFmpeg `drawtext`.
+///
+/// Supports lower-thirds, kill-feed text, animated titles, and watermarks.
+/// Font sizing is in points; position in normalised [0,1] coordinates.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TextEffect {
+    /// The text string to render (supports newlines with `\n`).
+    pub text: String,
+    /// Font file path, or empty to use FFmpeg's built-in font.
+    pub font_path: String,
+    /// Font size in points.
+    pub font_size: f64,
+    /// Text color in hex (e.g. `"#FFFFFF"`) or named color.
+    pub color: String,
+    /// Background box color (e.g. `"#000000@0.5"` for semi-transparent). Empty = no box.
+    pub box_color: String,
+    /// Box padding in pixels.
+    pub box_padding: u32,
+    /// X position as fraction of width (0.0 = left, 0.5 = center, 1.0 = right).
+    pub x: f64,
+    /// Y position as fraction of height (0.0 = top, 1.0 = bottom).
+    pub y: f64,
+    /// Fade-in duration in seconds (0 = instant).
+    pub fade_in_secs: f64,
+    /// Fade-out duration in seconds (0 = no fade out).
+    pub fade_out_secs: f64,
+    /// When to show text (seconds from clip start). Negative = always visible.
+    pub start_secs: f64,
+    /// Duration to show text. 0 = entire clip.
+    pub duration_secs: f64,
+    /// Font weight: `"normal"` or `"bold"`.
+    pub weight: String,
+}
+
+impl Default for TextEffect {
+    fn default() -> Self {
+        Self {
+            text: "VORTEX".into(),
+            font_path: String::new(),
+            font_size: 48.0,
+            color: "#FFFFFF".into(),
+            box_color: "#000000@0.5".into(),
+            box_padding: 8,
+            x: 0.5,
+            y: 0.85,
+            fade_in_secs: 0.3,
+            fade_out_secs: 0.3,
+            start_secs: 0.0,
+            duration_secs: 0.0,
+            weight: "bold".into(),
+        }
+    }
+}
+
+// ─── Stabilize ────────────────────────────────────────────────────────────────
+
+/// Video stabilization to remove unwanted camera shake/wobble.
+///
+/// Uses FFmpeg's `vidstab` two-pass stabilization:
+/// 1. `vidstabdetect` — analyses motion vectors and writes to a `.trf` file.
+/// 2. `vidstabtransform` — applies the stabilization.
+///
+/// This requires FFmpeg to be built with `--enable-libvidstab`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StabilizeEffect {
+    /// Smoothing strength (1–30). Higher = smoother but more cropping. Default: 10.
+    pub smoothing: u32,
+    /// How much to allow the stabilized frame to shift (crop margin 0.0–1.0).
+    pub crop_margin: f64,
+    /// Zoom in slightly to hide borders created by stabilization.
+    pub zoom: f64,
+    /// Path to write the motion vectors `.trf` file (temp file, auto-cleaned).
+    pub vectors_path: String,
+}
+
+impl Default for StabilizeEffect {
+    fn default() -> Self {
+        Self {
+            smoothing: 10,
+            crop_margin: 0.05,
+            zoom: 0.02,
+            vectors_path: String::new(), // auto-generated
+        }
+    }
+}
+
+// ─── Transition ──────────────────────────────────────────────────────────────
+
+/// Transition between two clips in the timeline.
+///
+/// Transitions are attached to clips and applied at their boundary.
+/// The render pipeline handles the xfade composite.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Transition {
+    /// Transition type: `"fade"`, `"dissolve"`, `"wipe_left"`, `"wipe_right"`,
+    /// `"zoom_in"`, `"zoom_out"`, `"slice"`, `"pixelize"`, `"radial"`.
+    pub kind: String,
+    /// Duration in seconds (typically 0.3–1.0s).
+    pub duration_secs: f64,
+    /// Easing: `"linear"`, `"ease_in"`, `"ease_out"`, `"ease_in_out"`.
+    pub easing: String,
+}
+
+impl Default for Transition {
+    fn default() -> Self {
+        Self {
+            kind: "dissolve".into(),
+            duration_secs: 0.5,
+            easing: "ease_in_out".into(),
+        }
+    }
+}
+
+impl Transition {
+    pub fn new(kind: impl Into<String>, duration_secs: f64) -> Self {
+        Self { kind: kind.into(), duration_secs, easing: "ease_in_out".into() }
+    }
+
+    /// Map transition kind to FFmpeg `xfade` transition name.
+    pub fn xfade_name(&self) -> &str {
+        match self.kind.as_str() {
+            "fade" | "dissolve" => "dissolve",
+            "wipe_left"  => "wipeleft",
+            "wipe_right" => "wiperight",
+            "wipe_up"    => "wipeup",
+            "wipe_down"  => "wipedown",
+            "zoom_in"    => "zoomin",
+            "slice"      => "slideleft",
+            "pixelize"   => "pixelize",
+            "radial"     => "radial",
+            "fade_black" => "fade",
+            _ => "dissolve",
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -370,6 +514,8 @@ mod tests {
         assert_eq!(Effect::Flash(FlashEffect::default()).name(), "flash");
         assert_eq!(Effect::Shake(ShakeEffect::default()).name(), "shake");
         assert_eq!(Effect::Velocity(VelocityEffect::default()).name(), "velocity");
+        assert_eq!(Effect::Text(TextEffect::default()).name(), "text");
+        assert_eq!(Effect::Stabilize(StabilizeEffect::default()).name(), "stabilize");
     }
 
     #[test]

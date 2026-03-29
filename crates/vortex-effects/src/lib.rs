@@ -10,16 +10,20 @@
 pub mod chromatic;
 pub mod color;
 pub mod flash;
+pub mod rotoscope;
 pub mod shake;
+pub mod stabilize;
+pub mod text;
 pub mod velocity;
 pub mod zoom;
-pub mod rotoscope;
 
 pub use chromatic::*;
 pub use color::*;
 pub use flash::*;
 pub use rotoscope::*;
 pub use shake::*;
+pub use stabilize::*;
+pub use text::*;
 pub use velocity::*;
 pub use zoom::*;
 
@@ -118,6 +122,8 @@ pub fn effect_to_filter(effect: &Effect, ctx: &EffectContext) -> Result<FilterFr
             Ok(FilterFragment::new(filter, "glitch"))
         }
         Effect::Rotoscope(e) => rotoscope_filter(e, ctx),
+        Effect::Text(e) => text_filter(e, ctx),
+        Effect::Stabilize(e) => stabilize_filter(e, ctx),
     }
 }
 

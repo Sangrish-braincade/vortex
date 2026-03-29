@@ -63,15 +63,15 @@ pub fn velocity_filter(effect: &VelocityEffect, ctx: &EffectContext) -> Result<F
     }
 
     // Piecewise expression: O(T)/TB evaluated per frame.
-    // FFmpeg `setpts` receives `T` (seconds) and `TB` (time base).
-    // Returning O(T)/TB gives the new PTS in timebase units.
+    // Uses FFmpeg's lt(a,b) and gte(a,b) functions (not < / >= operators).
+    // Single-quoted to protect the commas inside lt()/gte() from the
+    // filter-chain parser (which splits on bare commas).
+    // Three mutually-exclusive boolean-mask terms avoid nested if() calls
+    // and produce no timestamp discontinuities.
     let filter = format!(
-        "setpts=if(lte(T,{t1:.6}),\
-T/{max_s:.6},\
-if(lte(T,{t2:.6}),\
-{off1:.6}+(T-{t1:.6})/{min_s:.6},\
-{off2:.6}+(T-{t2:.6})/{max_s:.6}\
-))/TB",
+        "setpts='(lt(T,{t1:.6})*T/{max_s:.6}\
++gte(T,{t1:.6})*lt(T,{t2:.6})*({off1:.6}+(T-{t1:.6})/{min_s:.6})\
++gte(T,{t2:.6})*({off2:.6}+(T-{t2:.6})/{max_s:.6}))/TB'",
         t1 = t1,
         t2 = t2,
         max_s = max_s,
@@ -108,9 +108,9 @@ mod tests {
             easing: "linear".into(),
         };
         let f = velocity_filter(&effect, &ctx).unwrap();
-        assert!(f.filter.starts_with("setpts=if("));
-        assert!(f.filter.contains("lte(T,"));
-        assert!(f.filter.contains("/TB"));
+        assert!(f.filter.starts_with("setpts='"));
+        assert!(f.filter.contains("lt(T,"));
+        assert!(f.filter.contains("/TB'"));
     }
 
     #[test]

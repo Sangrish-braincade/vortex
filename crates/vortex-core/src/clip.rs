@@ -1,6 +1,6 @@
 //! Clip data model — a segment of source video placed on the timeline.
 
-use crate::{Effect, TimeRange};
+use crate::{Effect, TimeRange, Transition};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -31,6 +31,8 @@ pub struct Clip {
     pub is_kill_moment: bool,
     /// Confidence score from ML analysis (0.0–1.0).
     pub kill_confidence: f64,
+    /// Optional transition to apply at the *start* of this clip (overlap with previous clip).
+    pub transition_in: Option<Transition>,
 }
 
 impl Clip {
@@ -53,7 +55,14 @@ impl Clip {
             crop: None,
             is_kill_moment: false,
             kill_confidence: 0.0,
+            transition_in: None,
         }
+    }
+
+    /// Set the transition applied at this clip's entry point.
+    pub fn with_transition(mut self, t: Transition) -> Self {
+        self.transition_in = Some(t);
+        self
     }
 
     /// Add an effect to this clip (appended to the end of the chain).

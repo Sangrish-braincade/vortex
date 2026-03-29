@@ -218,14 +218,67 @@ impl RenderPipeline {
             audio_labels.push(format!("[a{i}]"));
         }
 
-        // Concat all clips
+        // Join clips: use xfade transitions where requested, concat otherwise
         let n = clips.len();
-        let concat_inputs = format!(
-            "{video}{audio}concat=n={n}:v=1:a=1[vconcat][aconcat]",
-            video = video_labels.join(""),
-            audio = audio_labels.join(""),
-        );
-        parts.push(concat_inputs);
+        let has_transitions = clips.iter().any(|c| c.transition_in.is_some());
+
+        if has_transitions && n > 1 {
+            // Build xfade chain for video
+            // Track cumulative output duration as we chain clips
+            let mut cumulative = clips[0].source_range.duration();
+            let mut cur_vid = format!("[v0]");
+
+            for i in 1..n {
+                let clip = &clips[i];
+                let clip_dur = clip.source_range.duration();
+
+                if let Some(tr) = &clip.transition_in {
+                    let tr_dur = tr.duration_secs.min(cumulative * 0.5).min(clip_dur * 0.5);
+                    let offset = cumulative - tr_dur;
+                    let xfade = format!(
+                        "{cur}[v{i}]xfade=transition={kind}:duration={dur:.3}:offset={off:.3}[xf{i}]",
+                        cur = cur_vid,
+                        kind = tr.xfade_name(),
+                        dur = tr_dur,
+                        off = offset,
+                    );
+                    parts.push(xfade);
+                    cur_vid = format!("[xf{i}]");
+                    cumulative += clip_dur - tr_dur;
+                } else {
+                    // No transition for this clip — accumulate a concat segment
+                    // Simple approach: treat as direct concat at cut point
+                    let xfade = format!(
+                        "{cur}[v{i}]xfade=transition=fade:duration=0.001:offset={off:.3}[xf{i}]",
+                        cur = cur_vid,
+                        off = cumulative - 0.001,
+                    );
+                    parts.push(xfade);
+                    cur_vid = format!("[xf{i}]");
+                    cumulative += clip_dur;
+                }
+            }
+            parts.push(format!("{}copy[vconcat]", cur_vid));
+
+            // Audio still uses concat (xfade audio is handled separately)
+            let audio_concat = format!(
+                "{audio}concat=n={n}:v=0:a=1[aconcat]",
+                audio = audio_labels.join(""),
+            );
+            parts.push(audio_concat);
+        } else {
+            // FFmpeg concat expects inputs interleaved per segment:
+            // [v0][a0][v1][a1][v2][a2]  NOT  [v0][v1][v2][a0][a1][a2]
+            let interleaved: String = video_labels
+                .iter()
+                .zip(audio_labels.iter())
+                .map(|(v, a)| format!("{v}{a}"))
+                .collect();
+            let concat_inputs = format!(
+                "{interleaved}concat=n={n}:v=1:a=1[vconcat][aconcat]",
+            );
+            parts.push(concat_inputs);
+        }
 
         // Mix in music tracks
         let audio_tracks = &project.timeline.audio_tracks;
