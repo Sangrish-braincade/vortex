@@ -6,10 +6,12 @@
 
 pub mod beats;
 pub mod kills;
+pub mod probe;
 pub mod scenes;
 
 pub use beats::*;
 pub use kills::*;
+pub use probe::*;
 pub use scenes::*;
 
 use thiserror::Error;

@@ -136,15 +136,16 @@ async fn cmd_analyse(input_path: &str, output_path: Option<&str>) -> anyhow::Res
     let beat_detector = BeatDetector::new(BeatDetectorConfig::default());
     let scene_detector = SceneDetector::new(SceneDetectorConfig::default());
 
-    let (kills, beats, scenes) = tokio::join!(
+    let (kills, beats, scenes, duration) = tokio::join!(
         kill_detector.detect(input_path),
         beat_detector.analyse(input_path),
         scene_detector.detect(input_path),
+        vortex_analysis::probe_duration(input_path),
     );
 
     let analysis = vortex_analysis::ClipAnalysis {
         source_path: input_path.to_string(),
-        duration_secs: 0.0, // TODO: probe with ffprobe
+        duration_secs: duration.unwrap_or(0.0),
         kill_moments: kills?,
         scene_cuts: scenes?,
         beats: Some(beats?),
