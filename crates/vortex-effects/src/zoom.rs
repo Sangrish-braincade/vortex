@@ -1,17 +1,21 @@
 //! Zoom punch / pull effect.
 //!
-//! Uses FFmpeg `zoompan` for animated zoom, or `scale` + `crop` for
-//! a static zoom-in.
+//! Uses FFmpeg `zoompan` for animated zoom. The `z` expression controls
+//! the per-frame scale factor using one of four easing curves:
+//!
+//! - `linear`:   uniform scale progression
+//! - `ease_in`:  accelerating (slow start, fast end)
+//! - `ease_out`: decelerating (fast start, slow end) — default
+//! - `spring`:   overshoot and oscillate: `to + (from-to)*exp(-k*t)*cos(w*t)`
 
 use crate::{EffectContext, EffectError, FilterFragment, Result};
 use vortex_core::ZoomEffect;
 
-/// Generate the zoom filter fragment.
+/// Generate the zoom filter fragment with easing curve support.
 ///
-/// # TODO (Phase 1)
-/// - Implement easing curves (ease_in, ease_out, spring) by computing
-///   the per-frame scale value and embedding it as an expression.
-/// - Use `zoompan=z='expr':x='cx':y='cy':d=N:s=WxH` with proper frame count.
+/// The `zoompan` z-expression is parametric over `in` (input frame index).
+/// We normalise frame index to `t = in / fps` (seconds) and apply the
+/// chosen easing on `[0, duration_secs]`.
 pub fn zoom_filter(effect: &ZoomEffect, ctx: &EffectContext) -> Result<FilterFragment> {
     if effect.from_scale <= 0.0 || effect.to_scale <= 0.0 {
         return Err(EffectError::InvalidParameter {
@@ -20,26 +24,68 @@ pub fn zoom_filter(effect: &ZoomEffect, ctx: &EffectContext) -> Result<FilterFra
         });
     }
 
-    let total_frames = (effect.duration_secs * ctx.fps as f64) as u32;
-    let zoom_frames = total_frames.max(1);
-
-    // Focal point in pixel coords
+    let total_frames = ((effect.duration_secs * ctx.fps as f64) as u32).max(1);
     let cx = (effect.focal_x * ctx.width as f64) as u32;
     let cy = (effect.focal_y * ctx.height as f64) as u32;
 
-    // Animated zoom: zoom from from_scale to to_scale over duration_secs
-    // z expression: linear interpolation from_scale → to_scale
-    let delta = effect.to_scale - effect.from_scale;
+    let from = effect.from_scale;
+    let to = effect.to_scale;
+    let delta = to - from;
+    let fps = ctx.fps as f64;
+
+    // Build z-expression for the requested easing.
+    // `in` is the frame index (0-based) in zoompan context.
+    // We clamp to total_frames so the zoom holds at `to` afterward.
     let z_expr = if delta.abs() < 1e-6 {
-        format!("{:.4}", effect.from_scale)
+        // No animation needed — static zoom
+        format!("{:.4}", from)
     } else {
-        format!(
-            "if(lte(in,{frames}),{from}+({delta}*(in/{frames})),{to})",
-            frames = zoom_frames,
-            from = effect.from_scale,
-            delta = delta,
-            to = effect.to_scale,
-        )
+        match effect.easing.as_str() {
+            "linear" => {
+                // t_norm = in / total_frames  (0 → 1)
+                // z = from + delta * t_norm
+                format!(
+                    "{from:.4}+{delta:.4}*(min(in,{frames})*1.0/{frames})",
+                    from = from,
+                    delta = delta,
+                    frames = total_frames,
+                )
+            }
+            "ease_in" => {
+                // Cubic ease-in: t_norm^3
+                format!(
+                    "{from:.4}+{delta:.4}*pow(min(in,{frames})*1.0/{frames},3)",
+                    from = from,
+                    delta = delta,
+                    frames = total_frames,
+                )
+            }
+            "spring" => {
+                // Spring: to + (from-to) * exp(-k*t) * cos(w*t)
+                // k = 4.0 (damping), w = 12.0 rad/s (oscillation freq)
+                // t = in / fps  (seconds)
+                let k = 4.0_f64;
+                let w = 12.0_f64;
+                format!(
+                    "{to:.4}+({from:.4}-{to:.4})*exp(-{k:.4}*(in/{fps:.4}))*cos({w:.4}*(in/{fps:.4}))",
+                    to = to,
+                    from = from,
+                    k = k,
+                    w = w,
+                    fps = fps,
+                )
+            }
+            // "ease_out" and everything else
+            _ => {
+                // Cubic ease-out: 1 - (1-t)^3
+                format!(
+                    "{from:.4}+{delta:.4}*(1-pow(1-min(in,{frames})*1.0/{frames},3))",
+                    from = from,
+                    delta = delta,
+                    frames = total_frames,
+                )
+            }
+        }
     };
 
     let filter = format!(
@@ -47,7 +93,7 @@ pub fn zoom_filter(effect: &ZoomEffect, ctx: &EffectContext) -> Result<FilterFra
         z = z_expr,
         cx = cx,
         cy = cy,
-        frames = zoom_frames,
+        frames = total_frames,
         w = ctx.width,
         h = ctx.height,
         fps = ctx.fps,
@@ -56,9 +102,8 @@ pub fn zoom_filter(effect: &ZoomEffect, ctx: &EffectContext) -> Result<FilterFra
     Ok(FilterFragment::new(
         filter,
         format!(
-            "zoom {:.2}→{:.2} over {:.2}s (focal {:.2},{:.2})",
-            effect.from_scale, effect.to_scale, effect.duration_secs,
-            effect.focal_x, effect.focal_y,
+            "zoom {:.2}→{:.2} ({}) over {:.2}s @ ({:.2},{:.2})",
+            from, to, effect.easing, effect.duration_secs, effect.focal_x, effect.focal_y,
         ),
     ))
 }
@@ -67,21 +112,56 @@ pub fn zoom_filter(effect: &ZoomEffect, ctx: &EffectContext) -> Result<FilterFra
 mod tests {
     use super::*;
 
-    #[test]
-    fn zoom_filter_generates() {
-        let ctx = EffectContext::new(1920, 1080, 60.0, 3.0);
-        let effect = ZoomEffect::default();
-        let f = zoom_filter(&effect, &ctx).unwrap();
-        assert!(f.filter.contains("zoompan"));
+    fn ctx() -> EffectContext {
+        EffectContext::new(1920, 1080, 60.0, 3.0)
     }
 
     #[test]
-    fn zoom_filter_rejects_negative_scale() {
-        let ctx = EffectContext::new(1920, 1080, 60.0, 3.0);
+    fn zoom_default_ease_out() {
+        let f = zoom_filter(&ZoomEffect::default(), &ctx()).unwrap();
+        assert!(f.filter.contains("zoompan"));
+        assert!(f.filter.contains("pow(1-"));
+    }
+
+    #[test]
+    fn zoom_linear() {
+        let effect = ZoomEffect { easing: "linear".into(), ..Default::default() };
+        let f = zoom_filter(&effect, &ctx()).unwrap();
+        assert!(f.filter.contains("zoompan"));
+        // linear expression doesn't use pow
+        assert!(!f.filter.contains("pow(1-"));
+    }
+
+    #[test]
+    fn zoom_ease_in() {
+        let effect = ZoomEffect { easing: "ease_in".into(), ..Default::default() };
+        let f = zoom_filter(&effect, &ctx()).unwrap();
+        assert!(f.filter.contains("pow(min(in"));
+    }
+
+    #[test]
+    fn zoom_spring() {
+        let effect = ZoomEffect { easing: "spring".into(), ..Default::default() };
+        let f = zoom_filter(&effect, &ctx()).unwrap();
+        assert!(f.filter.contains("exp("));
+        assert!(f.filter.contains("cos("));
+    }
+
+    #[test]
+    fn zoom_static_no_delta() {
         let effect = ZoomEffect {
-            from_scale: -1.0,
+            from_scale: 1.2,
+            to_scale: 1.2,
             ..Default::default()
         };
-        assert!(zoom_filter(&effect, &ctx).is_err());
+        let f = zoom_filter(&effect, &ctx()).unwrap();
+        // Static zoom — no dynamic expression needed
+        assert!(f.filter.contains("z='1.2"));
+    }
+
+    #[test]
+    fn zoom_rejects_negative_scale() {
+        let effect = ZoomEffect { from_scale: -1.0, ..Default::default() };
+        assert!(zoom_filter(&effect, &ctx()).is_err());
     }
 }

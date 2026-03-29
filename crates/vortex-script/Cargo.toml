@@ -14,5 +14,4 @@ thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
 
-# TODO (Phase 3): enable Deno / V8 embedding
-# deno_core = "0.290"
+rhai = { version = "1", features = ["sync"] }

@@ -36,18 +36,18 @@ The engine exposes:
 
 | Crate | Status | Purpose |
 |-------|--------|---------|
-| `vortex-core` | ✅ Data models complete | Project, Timeline, Clip, Effect types |
-| `vortex-effects` | ✅ Filter stubs | FFmpeg filter graph generation per effect |
-| `vortex-render` | ✅ Command builder | FFmpeg pipeline — needs real subprocess |
-| `vortex-analysis` | 🔨 Stubs | Kill/beat/scene detection |
-| `vortex-ml` | 🔨 Stub | ONNX runtime wrapper |
-| `vortex-script` | 🔨 Stub | V8/Deno embedding |
-| `vortex-server` | ✅ CLI + MCP skeleton | Needs MCP transport + tool handlers |
-| `vortex-styles` | ✅ Parser complete | TOML style templates |
+| `vortex-core` | ✅ Complete | Project, Timeline, Clip, Effect types |
+| `vortex-effects` | ✅ Complete | All 9 effects: velocity ramp (piecewise setpts), zoom (ease/spring), shake, color, flash, chromatic, letterbox, vignette, glitch |
+| `vortex-render` | ✅ Complete | Real FFmpeg subprocess with stderr progress parsing |
+| `vortex-analysis` | ✅ Complete | Scenes (FFmpeg select filter), beats (PCM energy onsets), kills (stub — needs ONNX model) |
+| `vortex-ml` | 🔨 Stub | ONNX runtime wrapper — infrastructure ready, awaits model |
+| `vortex-script` | ✅ Complete | Rhai embedded scripting — full VORTEX API (add_clip, add_effect, set_bpm, render) |
+| `vortex-server` | ✅ Complete | MCP stdio JSON-RPC server + CLI (render/analyse/script/serve) |
+| `vortex-styles` | ✅ Complete | TOML style templates with StyleRegistry |
 
 ---
 
-## Phase 1 — Core Engine (DO THIS FIRST)
+## Phase 1 — Core Engine ✅ DONE
 
 ### Step 1: Validate data models
 
@@ -142,7 +142,7 @@ cargo run --example create_sample_project > examples/sample-project.json
 
 ---
 
-## Phase 2 — ML Integration
+## Phase 2 — ML Integration (CURRENT)
 
 ### Step 1: ONNX runtime (vortex-ml)
 
@@ -206,7 +206,7 @@ let output = Command::new("ffmpeg")
 
 ---
 
-## Phase 3 — Agent Layer
+## Phase 3 — Agent Layer ✅ DONE (Rhai scripting replaces Deno)
 
 ### Step 1: V8/Deno embedding (vortex-script)
 

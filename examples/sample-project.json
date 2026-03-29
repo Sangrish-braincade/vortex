@@ -1,0 +1,133 @@
+{
+  "id": "7d8e4878-e7cf-4788-aa1a-289ef8582789",
+  "name": "valorant-montage",
+  "timeline": {
+    "clips": [
+      {
+        "id": "0db61f44-28a6-4137-b594-b044855feb65",
+        "label": "ace-round",
+        "source_path": "test-clips/sample-gameplay.mp4",
+        "source_range": {
+          "start": 45.0,
+          "end": 57.0
+        },
+        "timeline_range": {
+          "start": 0.0,
+          "end": 12.0
+        },
+        "effects": [
+          {
+            "type": "velocity",
+            "min_speed": 0.15,
+            "max_speed": 1.0,
+            "ramp_in_secs": 0.5,
+            "ramp_out_secs": 0.5,
+            "easing": "ease_in_out"
+          },
+          {
+            "type": "zoom",
+            "from_scale": 1.0,
+            "to_scale": 1.2,
+            "duration_secs": 0.4,
+            "focal_x": 0.5,
+            "focal_y": 0.45,
+            "easing": "spring"
+          },
+          {
+            "type": "flash",
+            "color": "#FFFFFF",
+            "peak_opacity": 0.9,
+            "duration_secs": 0.1,
+            "attack_ratio": 0.15
+          }
+        ],
+        "speed": 1.0,
+        "audio_gain_db": 0.0,
+        "flip_horizontal": false,
+        "crop": null,
+        "is_kill_moment": false,
+        "kill_confidence": 0.0
+      },
+      {
+        "id": "6acf069c-28b6-4526-b30b-f7de6f93639a",
+        "label": "clutch-1v3",
+        "source_path": "test-clips/sample-gameplay.mp4",
+        "source_range": {
+          "start": 120.0,
+          "end": 130.0
+        },
+        "timeline_range": {
+          "start": 12.0,
+          "end": 22.0
+        },
+        "effects": [
+          {
+            "type": "color",
+            "lut_path": null,
+            "lut_strength": 1.0,
+            "saturation": 1.3,
+            "contrast": 1.15,
+            "brightness": 0.05,
+            "hue_shift": -5.0
+          },
+          {
+            "type": "shake",
+            "intensity_x": 8.0,
+            "intensity_y": 6.0,
+            "frequency": 20.0,
+            "decay": 0.9,
+            "seed": 7
+          }
+        ],
+        "speed": 1.0,
+        "audio_gain_db": 0.0,
+        "flip_horizontal": false,
+        "crop": null,
+        "is_kill_moment": false,
+        "kill_confidence": 0.0
+      },
+      {
+        "id": "6f44a349-801d-438e-a376-134f5245623c",
+        "label": "headshot",
+        "source_path": "test-clips/sample-gameplay.mp4",
+        "source_range": {
+          "start": 200.0,
+          "end": 208.0
+        },
+        "timeline_range": {
+          "start": 22.0,
+          "end": 30.0
+        },
+        "effects": [
+          {
+            "type": "velocity",
+            "min_speed": 0.15,
+            "max_speed": 1.0,
+            "ramp_in_secs": 0.3,
+            "ramp_out_secs": 0.5,
+            "easing": "ease_in_out"
+          }
+        ],
+        "speed": 1.0,
+        "audio_gain_db": 0.0,
+        "flip_horizontal": false,
+        "crop": null,
+        "is_kill_moment": false,
+        "kill_confidence": 0.0
+      }
+    ],
+    "audio_tracks": [],
+    "duration": 30.0
+  },
+  "output": {
+    "width": 1920,
+    "height": 1080,
+    "fps": 60.0,
+    "bitrate_kbps": 8000,
+    "codec": "h264",
+    "format": "mp4"
+  },
+  "style": null,
+  "created_at": "2026-03-29T12:12:14.156513Z",
+  "updated_at": "2026-03-29T12:12:14.156513Z"
+}
