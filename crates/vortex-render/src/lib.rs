@@ -7,4 +7,6 @@
 //! they must NOT invoke `ffmpeg` directly.
 
 pub mod pipeline;
+pub mod rotoscope;
 pub use pipeline::*;
+pub use rotoscope::{RotoscopeResult, rotoscope_clip};

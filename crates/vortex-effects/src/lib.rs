@@ -13,10 +13,12 @@ pub mod flash;
 pub mod shake;
 pub mod velocity;
 pub mod zoom;
+pub mod rotoscope;
 
 pub use chromatic::*;
 pub use color::*;
 pub use flash::*;
+pub use rotoscope::*;
 pub use shake::*;
 pub use velocity::*;
 pub use zoom::*;
@@ -115,6 +117,48 @@ pub fn effect_to_filter(effect: &Effect, ctx: &EffectContext) -> Result<FilterFr
             );
             Ok(FilterFragment::new(filter, "glitch"))
         }
+        Effect::Rotoscope(e) => rotoscope_filter(e, ctx),
+    }
+}
+
+/// Generate the rotoscope filter fragment.
+///
+/// For `"chromakey"` and `"lumakey"` modes this is a pure FFmpeg filter.
+/// For `"sam2"` and `"rembg"` modes the filter is a passthrough — the actual
+/// ML segmentation is handled out-of-band by the render pipeline which calls
+/// the SAM 2 / rembg subprocess *before* the FFmpeg encode step.
+pub fn rotoscope_filter(
+    effect: &vortex_core::RotoscopeEffect,
+    _ctx: &EffectContext,
+) -> Result<FilterFragment> {
+    match effect.mode.as_str() {
+        "chromakey" => {
+            // FFmpeg chromakey: remove key_color within similarity tolerance
+            let color = effect.key_color.trim_start_matches('#');
+            let filter = format!(
+                "chromakey=color=0x{color}:similarity={sim:.3}:blend={blend:.3}",
+                color = color,
+                sim = effect.similarity.clamp(0.01, 1.0),
+                blend = effect.blend.clamp(0.0, 1.0),
+            );
+            Ok(FilterFragment::new(filter, format!("chromakey #{}", color)))
+        }
+        "lumakey" => {
+            // Luma key: remove dark (or bright if inverted) regions
+            let threshold = if effect.invert { 1.0 - effect.similarity } else { effect.similarity };
+            let filter = format!(
+                "lumakey=threshold={thresh:.3}:tolerance={tol:.3}:softness={soft:.3}",
+                thresh = threshold,
+                tol = effect.similarity.clamp(0.01, 0.5),
+                soft = effect.blend.clamp(0.0, 0.5),
+            );
+            Ok(FilterFragment::new(filter, "lumakey"))
+        }
+        // sam2 / rembg: handled by render pipeline — emit passthrough here
+        _ => Ok(FilterFragment::new(
+            String::from("null"),
+            format!("rotoscope/{} (handled by render pipeline)", effect.mode),
+        )),
     }
 }
 

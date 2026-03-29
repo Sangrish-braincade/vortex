@@ -30,6 +30,8 @@ pub enum Effect {
     Vignette(VignetteEffect),
     /// Glitch / datamosh artifact.
     Glitch(GlitchEffect),
+    /// Rotoscoping — background removal or chroma key compositing.
+    Rotoscope(RotoscopeEffect),
 }
 
 impl Effect {
@@ -45,6 +47,7 @@ impl Effect {
             Effect::Letterbox(_) => "letterbox",
             Effect::Vignette(_) => "vignette",
             Effect::Glitch(_) => "glitch",
+            Effect::Rotoscope(_) => "rotoscope",
         }
     }
 }
@@ -275,6 +278,59 @@ impl Default for VignetteEffect {
             strength: 0.5,
             inner_radius: 0.4,
             outer_radius: 0.9,
+        }
+    }
+}
+
+// ─── Rotoscope ────────────────────────────────────────────────────────────────
+
+/// Rotoscoping — isolate subjects from background using keying or ML segmentation.
+///
+/// Four modes:
+/// - `"chromakey"`: remove a background colour (green/blue screen). Pure FFmpeg, instant.
+/// - `"lumakey"`: key out bright or dark regions. Pure FFmpeg.
+/// - `"sam2"`: ML-based video segmentation via SAM 2 (Segment Anything Model 2).
+///   Uses `sam_onnx_rust` or the SAM 2 Python CLI. Temporally consistent across frames.
+/// - `"rembg"`: per-frame ML background removal via `rembg` CLI (fallback).
+///
+/// SAM 2 is the preferred ML mode: it tracks subjects across frames and produces
+/// smooth, temporally consistent masks — essential for video montage work.
+/// See: <https://github.com/facebookresearch/sam2>
+/// Rust ONNX wrapper: <https://github.com/AndreyGermanov/sam_onnx_rust>
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RotoscopeEffect {
+    /// Keying mode: `"chromakey"`, `"lumakey"`, `"sam2"`, or `"rembg"`.
+    pub mode: String,
+    /// Key colour for chromakey mode (hex, e.g. `"#00FF00"` for green screen).
+    pub key_color: String,
+    /// Similarity threshold for chroma/luma keying (0.0–1.0).
+    pub similarity: f64,
+    /// Edge blend softness / mask feather (0.0–1.0).
+    pub blend: f64,
+    /// Background to composite onto: path to image/video, `"blur"`, or `"transparent"`.
+    pub background: String,
+    /// Whether to invert the mask (keep background, remove foreground).
+    pub invert: bool,
+    /// SAM 2 / rembg model variant: `"sam2_t"` (tiny), `"sam2_s"` (small), `"sam2_b+"` (base+), `"sam2_l"` (large).
+    pub model_variant: String,
+    /// Path to SAM 2 ONNX encoder/decoder model directory. Empty = auto-download.
+    pub model_dir: String,
+    /// Prompt point for SAM 2 in normalised coords `[x, y]` (0.5,0.5 = centre).
+    pub prompt_point: [f32; 2],
+}
+
+impl Default for RotoscopeEffect {
+    fn default() -> Self {
+        Self {
+            mode: "sam2".into(),
+            key_color: "#00FF00".into(),
+            similarity: 0.3,
+            blend: 0.05,
+            background: "transparent".into(),
+            invert: false,
+            model_variant: "sam2_t".into(),
+            model_dir: String::new(),
+            prompt_point: [0.5, 0.45],
         }
     }
 }

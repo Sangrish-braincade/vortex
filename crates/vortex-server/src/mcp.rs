@@ -26,7 +26,7 @@ use uuid::Uuid;
 use vortex_core::{AudioTrack, Clip, Effect, Project, TimeRange};
 use vortex_core::{
     ChromaticEffect, ColorEffect, FlashEffect, GlitchEffect, LetterboxEffect,
-    ShakeEffect, VelocityEffect, VignetteEffect, ZoomEffect,
+    RotoscopeEffect, ShakeEffect, VelocityEffect, VignetteEffect, ZoomEffect,
 };
 
 // ─── JSON-RPC types ───────────────────────────────────────────────────────────
@@ -159,12 +159,12 @@ impl McpServer {
                         "clip_id": { "type": "string" },
                         "effect_type": {
                             "type": "string",
-                            "enum": ["velocity", "zoom", "shake", "flash", "color", "chromatic", "letterbox", "vignette", "glitch"],
-                            "description": "Effect type. velocity=slow-mo ramp, zoom=scale punch, shake=camera jitter, flash=white burst, color=grade+LUT, chromatic=RGB split, letterbox=cinema bars"
+                            "enum": ["velocity", "zoom", "shake", "flash", "color", "chromatic", "letterbox", "vignette", "glitch", "rotoscope"],
+                            "description": "Effect type. velocity=slow-mo ramp, zoom=scale punch, shake=camera jitter, flash=white burst, color=grade+LUT, chromatic=RGB split, letterbox=cinema bars, rotoscope=background removal (SAM2/chromakey)"
                         },
                         "params": {
                             "type": "object",
-                            "description": "Effect params. velocity: {min_speed, ramp_in_secs, ramp_out_secs}. zoom: {to_scale, duration_secs}. shake: {intensity_x, intensity_y, frequency}. flash: {color, peak_opacity, duration_secs}. color: {saturation, contrast, brightness, lut_path}. chromatic: {strength}. letterbox: {aspect_ratio}. vignette: {strength}. glitch: {displacement, duration_secs}"
+                            "description": "Effect params. velocity: {min_speed, ramp_in_secs, ramp_out_secs}. zoom: {to_scale, duration_secs, easing}. shake: {intensity_x, intensity_y, frequency}. flash: {color, peak_opacity, duration_secs}. color: {saturation, contrast, brightness, lut_path}. chromatic: {strength}. letterbox: {aspect_ratio}. vignette: {strength}. glitch: {displacement, duration_secs}. rotoscope: {mode, key_color, similarity, blend, background, model_variant, prompt_point}"
                         }
                     },
                     "required": ["project_id", "clip_id", "effect_type"]
@@ -818,9 +818,39 @@ fn build_effect(effect_type: &str, params: &serde_json::Value) -> Result<Effect,
             }
             Effect::Glitch(e)
         }
+        "rotoscope" => {
+            let mut e = RotoscopeEffect::default();
+            if let Some(v) = params.get("mode").and_then(|v| v.as_str()) {
+                e.mode = v.to_string();
+            }
+            if let Some(v) = params.get("key_color").and_then(|v| v.as_str()) {
+                e.key_color = v.to_string();
+            }
+            if let Some(v) = params.get("similarity").and_then(|v| v.as_f64()) {
+                e.similarity = v;
+            }
+            if let Some(v) = params.get("blend").and_then(|v| v.as_f64()) {
+                e.blend = v;
+            }
+            if let Some(v) = params.get("background").and_then(|v| v.as_str()) {
+                e.background = v.to_string();
+            }
+            if let Some(v) = params.get("model_variant").and_then(|v| v.as_str()) {
+                e.model_variant = v.to_string();
+            }
+            if let Some(arr) = params.get("prompt_point").and_then(|v| v.as_array()) {
+                if arr.len() == 2 {
+                    e.prompt_point = [
+                        arr[0].as_f64().unwrap_or(0.5) as f32,
+                        arr[1].as_f64().unwrap_or(0.45) as f32,
+                    ];
+                }
+            }
+            Effect::Rotoscope(e)
+        }
         other => {
             return Err(format!(
-                "Unknown effect type: '{other}'. Valid types: velocity, zoom, shake, flash, color, chromatic, letterbox, vignette, glitch"
+                "Unknown effect type: '{other}'. Valid types: velocity, zoom, shake, flash, color, chromatic, letterbox, vignette, glitch, rotoscope"
             ))
         }
     })

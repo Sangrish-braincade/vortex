@@ -14,6 +14,15 @@ thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
 
-# TODO (Phase 2): uncomment when integrating ONNX runtime
-# ort = { version = "2", features = ["cuda"] }
-# ndarray = "0.15"
+ndarray = "0.15"
+
+[features]
+default = []
+# Enable real ONNX Runtime inference.
+# Requires ort to download the native OrtDNNRuntime DLL at build time.
+onnx = ["dep:ort"]
+
+[dependencies.ort]
+version = "2.0.0-rc.12"
+features = ["download-binaries"]
+optional = true

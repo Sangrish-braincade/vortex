@@ -24,7 +24,7 @@ use std::sync::{Arc, Mutex};
 
 use rhai::{Engine, Scope};
 use thiserror::Error;
-use vortex_core::{Clip, Effect, FlashEffect, Project, ShakeEffect, TimeRange, VelocityEffect};
+use vortex_core::{Clip, Effect, FlashEffect, Project, RotoscopeEffect, ShakeEffect, TimeRange, VelocityEffect};
 
 #[derive(Debug, Error)]
 pub enum ScriptError {
@@ -213,6 +213,20 @@ fn build_effect(effect_type: &str, params: &rhai::Map) -> Effect {
             frequency: get_f64("frequency", 24.0),
             decay: get_f64("decay", 0.85),
             seed: 42,
+        }),
+        "rotoscope" => Effect::Rotoscope(RotoscopeEffect {
+            mode: get_str("mode", "sam2"),
+            key_color: get_str("key_color", "#00FF00"),
+            similarity: get_f64("similarity", 0.3),
+            blend: get_f64("blend", 0.05),
+            background: get_str("background", "transparent"),
+            invert: false,
+            model_variant: get_str("model_variant", "sam2_t"),
+            model_dir: get_str("model_dir", ""),
+            prompt_point: [
+                get_f64("prompt_x", 0.5) as f32,
+                get_f64("prompt_y", 0.45) as f32,
+            ],
         }),
         "flash" | _ => Effect::Flash(FlashEffect {
             color: get_str("color", "#FFFFFF"),
