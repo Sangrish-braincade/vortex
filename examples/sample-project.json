@@ -11,8 +11,7 @@
         "timeline_range": { "start": 0.0, "end": 10.0 },
         "effects": [
           { "type": "velocity", "min_speed": 0.25, "max_speed": 1.0, "ramp_in_secs": 0.5, "ramp_out_secs": 0.5, "easing": "ease_in_out" },
-          { "type": "zoom", "from_scale": 1.0, "to_scale": 1.15, "duration_secs": 0.4, "focal_x": 0.5, "focal_y": 0.45, "easing": "spring" },
-          { "type": "flash", "color": "#FFFFFF", "peak_opacity": 0.85, "duration_secs": 0.1, "attack_ratio": 0.2 }
+          { "type": "zoom", "from_scale": 1.0, "to_scale": 1.15, "duration_secs": 0.4, "focal_x": 0.5, "focal_y": 0.45, "easing": "spring" }
         ],
         "speed": 1.0, "audio_gain_db": 0.0, "flip_horizontal": false, "crop": null,
         "is_kill_moment": true, "kill_confidence": 0.92, "transition_in": null
@@ -51,5 +50,5 @@
   },
   "style": null,
   "created_at": "2026-03-29T12:12:14.156513Z",
-  "updated_at": "2026-03-29T16:55:00.000000Z"
+  "updated_at": "2026-03-29T17:00:00.000000Z"
 }

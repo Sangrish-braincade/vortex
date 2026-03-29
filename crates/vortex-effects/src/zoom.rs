@@ -88,12 +88,16 @@ pub fn zoom_filter(effect: &ZoomEffect, ctx: &EffectContext) -> Result<FilterFra
         }
     };
 
+    // d=1: one output frame per input frame.
+    // Larger d would buffer d input frames per output "zoom segment", causing
+    // OOM for long video clips (e.g. d=24 on a 600-frame clip → 14 400 frames
+    // buffered). The z-expression already handles the animation duration via
+    // `min(in, total_frames)` clamping.
     let filter = format!(
-        "zoompan=z='{z}':x='{cx}':y='{cy}':d={frames}:s={w}x{h}:fps={fps}",
+        "zoompan=z='{z}':x='{cx}':y='{cy}':d=1:s={w}x{h}:fps={fps}",
         z = z_expr,
         cx = cx,
         cy = cy,
-        frames = total_frames,
         w = ctx.width,
         h = ctx.height,
         fps = ctx.fps,
